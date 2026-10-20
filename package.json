@@ -1,0 +1,13 @@
+{
+  "name": "aifuyi-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AIFUYI — custom wheel bolts & automotive fasteners. Static site: one page, inquiry builder, no backend.",
+  "scripts": {
+    "dev": "node tools/serve.mjs",
+    "start": "node tools/serve.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

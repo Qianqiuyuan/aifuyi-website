@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://www.yhaifuyi.com/assets/data/rfq-schema.json",
+  "title": "AIFUYI inquiry",
+  "description": "The one shape an inquiry travels in: browser builder -> email/WhatsApp text -> (optionally) POST endpoint -> quoting sheet. Keep this file and rfq.js in step; if a field is added in one, add it in the other.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ref", "product", "size", "pitch", "length", "seat", "material", "finish", "qty"],
+  "properties": {
+    "ref": { "type": "string", "pattern": "^RFQ-[0-9]{6}-[A-Z0-9]{3}$", "examples": ["RFQ-261020-K7B"] },
+
+    "product": {
+      "type": "string",
+      "enum": ["Wheel bolt", "Wheel nut", "Wheel stud", "Other custom fastener"]
+    },
+
+    "size": {
+      "type": "string",
+      "description": "Nominal diameter, chosen separately from pitch. Free text survives 'Other' so imperial and M18+ threads are not lost.",
+      "examples": ["M10", "M12", "M14", "M16", "1/2-20 UNF", "M18"]
+    },
+    "pitch": {
+      "type": "string",
+      "description": "Pitch in mm. Not every pitch exists on every diameter: M10 allows 1.25/1.5, M12 allows 1.25/1.5/1.75, M14 allows 1.25/1.5/2.0, M16 allows 1.5/2.0. The builder disables impossible pairs rather than accepting them.",
+      "examples": ["1.25", "1.5", "1.75", "2.0", "20 TPI"]
+    },
+    "thread": {
+      "type": "string",
+      "description": "Derived display string, 'size × pitch'. Convenience only; size and pitch are the source of truth.",
+      "examples": ["M14 × 1.25"]
+    },
+
+    "length": {
+      "type": "string",
+      "description": "Length under head (underside of head to end of thread). Preset in mm, or free text when typed.",
+      "examples": ["35 mm", "38.5 mm", "1.75 in"]
+    },
+    "length_mm": {
+      "type": "number",
+      "minimum": 8,
+      "maximum": 200,
+      "description": "Numeric form when it could be parsed; used for the price band."
+    },
+
+    "seat": {
+      "type": "string",
+      "enum": [
+        "Ball seat R12", "Ball seat R13", "Ball seat R14",
+        "Cone seat 60°", "Flat seat with washer", "Tuner / spline drive"
+      ]
+    },
+
+    "material": {
+      "type": "string",
+      "description": "Class as well as grade — 40Cr at 10.9 and at 12.9 are different parts. 'Other material' carries material_other.",
+      "examples": ["40Cr, class 10.9", "SCM435, class 12.9", "35CrMo, class 12.9",
+                   "AISI 304 stainless", "AISI 316 stainless", "Titanium Ti-6Al-4V",
+                   "Other material", "42CrMo4, class 10.9"]
+    },
+    "material_other": { "type": "string", "maxLength": 200, "description": "Free text when material is 'Other material'." },
+
+    "finish": {
+      "type": "string",
+      "description": "Coating system. Salt-spray hours belong on the drawing, not in this field.",
+      "examples": ["Black oxide", "Zinc flake, silver", "Zinc flake, black",
+                   "Zinc-nickel", "Bright chrome", "PVD black",
+                   "Other finish", "Geomet 500, black / Dacromet"]
+    },
+    "finish_other": { "type": "string", "maxLength": 200, "description": "Free text when finish is 'Other finish'." },
+
+    "qty": {
+      "type": "integer",
+      "minimum": 3000,
+      "maximum": 50000,
+      "description": "Pieces per size and finish. 3,000 is the tooling break-even for this shop; above 50,000 the job becomes a separate programme and is quoted by a person, not by the page.",
+      "examples": [3000, 10000, 50000]
+    },
+
+    "incoterm": {
+      "type": "string",
+      "enum": ["", "DDP", "DDP, duties excluded", "FOB", "CIF", "EXW"],
+      "description": "Empty string when the buyer has not chosen. Only FOB and CIF name a loading port."
+    },
+    "port": {
+      "type": "string",
+      "enum": ["Ningbo", "Shanghai", "Shenzhen", "Buyer's forwarder"],
+      "description": "Loading port, meaningful only with FOB or CIF. Ningbo is the default because it is the nearest box terminal to Yuhuan."
+    },
+
+    "notes": { "type": "string", "maxLength": 2000 },
+    "who": { "type": "string", "maxLength": 200, "description": "Buyer name and company, as typed." },
+    "where": { "type": "string", "maxLength": 200, "description": "Country / delivery city." },
+
+    "drawing": {
+      "type": "object",
+      "description": "Never uploaded by the website. The buyer attaches the file in their own mail or WhatsApp client; this records that it is expected.",
+      "properties": {
+        "expected_formats": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["STEP", "IGES", "DXF", "DWG", "PDF", "physical sample"] },
+          "default": ["STEP", "IGES", "DXF", "DWG", "PDF", "physical sample"]
+        },
+        "attached_by_buyer": { "type": "boolean", "default": false }
+      }
+    },
+
+    "estimate": {
+      "type": "object",
+      "description": "Indicative band shown to the buyer. Advisory only - the quote is issued after drawing review.",
+      "properties": {
+        "currency": { "type": "string", "const": "USD" },
+        "unit_low": { "type": "number" },
+        "unit_high": { "type": "number" },
+        "tooling_low": { "type": "number" },
+        "tooling_high": { "type": "number" },
+        "total_low": { "type": "number" },
+        "total_high": { "type": "number" },
+        "tolerance_pct": { "type": "number", "default": 25 }
+      }
+    },
+
+    "meta": {
+      "type": "object",
+      "properties": {
+        "submitted_via": { "type": "string", "enum": ["gmail", "outlook", "yahoo", "default-mail", "whatsapp", "copy", "print", "endpoint"] },
+        "submitted_at": { "type": "string", "format": "date-time" },
+        "page_url": { "type": "string", "format": "uri" },
+        "referrer": { "type": "string" }
+      }
+    }
+  }
+}
